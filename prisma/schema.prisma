@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Patient {
+  id              String         @id @default(uuid())
+  name            String
+  phone           String         @unique
+  altPhone        String?
+  email           String?
+  city            String?        @default("Bhubaneswar")
+  condition       String         // e.g. "Lower Back Pain / Sciatica", "Cervical Spondylosis", "Slip Disc", "Frozen Shoulder", "Knee Osteoarthritis", "Sports Injury"
+  painScore       Int?           @default(7) // 1 - 10 Visual Analog Scale
+  leadSource      String         @default("Facebook Ads") // "Facebook Ads", "Instagram", "WhatsApp Direct", "Website", "Walk-in", "Doctor Referral"
+  campaignName    String?        // e.g. "Spine Health & Sciatica Campaign - Odisha"
+  stage           String         @default("NEW_ENQUIRY") 
+  // Stages: "NEW_ENQUIRY", "ASSESSMENT_BOOKED", "ASSESSMENT_COMPLETED", "ACTIVE_TREATMENT", "COMPLETED_RECOVERY", "NO_SHOW_FOLLOWUP"
+  assignedDoctor  String?        @default("Dr. Ashok P. Kota (Master of Chiropractic)")
+  packageName     String?        // e.g. "10 Sessions Advanced Spine Alignment & Decompression"
+  packagePrice    Float?         @default(0)
+  sessionsTotal   Int            @default(0)
+  sessionsDone    Int            @default(0)
+  notes           String?
+  tags            String?        // Comma separated tags e.g. "High Intent, MRI Available, VIP"
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  conversation    Conversation?
+  appointments    Appointment[]
+  sessions        TreatmentSession[]
+}
+
+model Conversation {
+  id              String         @id @default(uuid())
+  patientId       String         @unique
+  patient         Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  unreadCount     Int            @default(0)
+  lastMessageAt   DateTime       @default(now())
+  status          String         @default("OPEN") // "OPEN", "PENDING", "RESOLVED"
+  assignedAgent   String?        @default("Reception Team")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  messages        Message[]
+}
+
+model Message {
+  id              String         @id @default(uuid())
+  conversationId  String
+  conversation    Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderType      String         // "PATIENT", "CLINIC", "BOT", "SYSTEM"
+  text            String
+  mediaUrl        String?
+  mediaType       String?        // "IMAGE", "PDF", "VIDEO", "AUDIO", "LOCATION"
+  status          String         @default("SENT") // "SENT", "DELIVERED", "READ", "FAILED"
+  isTemplate      Boolean        @default(false)
+  templateName    String?
+  language        String?        @default("en") // "en", "or" (Odia), "hi" (Hindi)
+  createdAt       DateTime       @default(now())
+}
+
+model Appointment {
+  id              String         @id @default(uuid())
+  patientId       String
+  patient         Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorName      String
+  date            String         // YYYY-MM-DD
+  timeSlot        String         // e.g. "10:30 AM - 11:15 AM"
+  type            String         @default("Initial Spine & Posture Assessment") // "Initial Assessment", "Therapy Session", "Review Consultation"
+  status          String         @default("SCHEDULED") // "SCHEDULED", "COMPLETED", "CANCELLED", "NO_SHOW"
+  notes           String?
+  reminderSent24h Boolean        @default(false)
+  reminderSent2h  Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model TreatmentSession {
+  id              String         @id @default(uuid())
+  patientId       String
+  patient         Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  sessionNumber   Int
+  date            DateTime       @default(now())
+  therapiesGiven  String         // e.g. "Chiropractic Adjustment, Spinal Decompression, Laser Therapy, IASTM"
+  painScoreBefore Int?
+  painScoreAfter  Int?
+  therapistNotes  String?
+  homeExercisePdf String?
+  attended        Boolean        @default(true)
+}
+
+model BroadcastCampaign {
+  id               String        @id @default(uuid())
+  title            String
+  targetCondition  String?       // "ALL" or specific condition like "Lower Back Pain"
+  messageTemplate  String
+  language         String        @default("en")
+  totalRecipients  Int           @default(0)
+  sentCount        Int           @default(0)
+  deliveredCount   Int           @default(0)
+  readCount        Int           @default(0)
+  status           String        @default("COMPLETED") // "DRAFT", "SCHEDULED", "SENDING", "COMPLETED"
+  scheduledFor     DateTime?
+  createdAt        DateTime      @default(now())
+}
+
+model AutomationRule {
+  id               String        @id @default(uuid())
+  name             String
+  triggerKeyword   String        // e.g. "fees", "timing", "address", "back pain", "sciatica", "dr mishra"
+  matchType        String        @default("CONTAINS") // "EXACT", "CONTAINS", "STARTS_WITH"
+  responseText     String
+  mediaUrl         String?
+  mediaType        String?
+  language         String        @default("en")
+  isActive         Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+}
+
+model CannedResponse {
+  id               String        @id @default(uuid())
+  shortcut         String        // e.g. "/clinic-location", "/chiro-explained", "/odia-welcome"
+  title            String
+  language         String        // "English", "Odia", "Hindi"
+  category         String        // "Greeting", "Treatment Info", "Pricing", "Location", "Exercises"
+  message          String
+}
