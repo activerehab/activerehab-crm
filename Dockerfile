@@ -1,7 +1,7 @@
-FROM node:20-slim AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 
-RUN apt-get update -y && apt-get install -y openssl
+RUN apk add --no-cache openssl libc6-compat
 
 ENV NODE_ENV=production
 ENV PORT=10000
