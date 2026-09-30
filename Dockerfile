@@ -1,7 +1,7 @@
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 WORKDIR /app
 
-RUN apk add --no-cache openssl libc6-compat
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV PORT=10000
@@ -21,3 +21,4 @@ RUN npm run build
 EXPOSE 10000
 
 CMD ["npm", "start"]
+
