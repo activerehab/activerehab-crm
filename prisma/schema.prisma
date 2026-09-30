@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x", "debian-openssl-1.1.x"]
 }
 
 datasource db {
@@ -13,20 +14,19 @@ model Patient {
   phone           String         @unique
   altPhone        String?
   email           String?
-  city            String?        @default("Bhubaneswar")
-  condition       String         // e.g. "Lower Back Pain / Sciatica", "Cervical Spondylosis", "Slip Disc", "Frozen Shoulder", "Knee Osteoarthritis", "Sports Injury"
-  painScore       Int?           @default(7) // 1 - 10 Visual Analog Scale
-  leadSource      String         @default("Facebook Ads") // "Facebook Ads", "Instagram", "WhatsApp Direct", "Website", "Walk-in", "Doctor Referral"
-  campaignName    String?        // e.g. "Spine Health & Sciatica Campaign - Odisha"
-  stage           String         @default("NEW_ENQUIRY") 
-  // Stages: "NEW_ENQUIRY", "ASSESSMENT_BOOKED", "ASSESSMENT_COMPLETED", "ACTIVE_TREATMENT", "COMPLETED_RECOVERY", "NO_SHOW_FOLLOWUP"
+  city            String?        @default("Bhubaneswar (Patia)")
+  condition       String
+  painScore       Int?           @default(7)
+  leadSource      String         @default("Facebook Ads")
+  campaignName    String?
+  stage           String         @default("NEW_ENQUIRY")
   assignedDoctor  String?        @default("Dr. Ashok P. Kota (Master of Chiropractic)")
-  packageName     String?        // e.g. "10 Sessions Advanced Spine Alignment & Decompression"
+  packageName     String?
   packagePrice    Float?         @default(0)
   sessionsTotal   Int            @default(0)
   sessionsDone    Int            @default(0)
   notes           String?
-  tags            String?        // Comma separated tags e.g. "High Intent, MRI Available, VIP"
+  tags            String?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -41,7 +41,7 @@ model Conversation {
   patient         Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
   unreadCount     Int            @default(0)
   lastMessageAt   DateTime       @default(now())
-  status          String         @default("OPEN") // "OPEN", "PENDING", "RESOLVED"
+  status          String         @default("OPEN")
   assignedAgent   String?        @default("Reception Team")
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -53,14 +53,14 @@ model Message {
   id              String         @id @default(uuid())
   conversationId  String
   conversation    Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  senderType      String         // "PATIENT", "CLINIC", "BOT", "SYSTEM"
+  senderType      String
   text            String
   mediaUrl        String?
-  mediaType       String?        // "IMAGE", "PDF", "VIDEO", "AUDIO", "LOCATION"
-  status          String         @default("SENT") // "SENT", "DELIVERED", "READ", "FAILED"
+  mediaType       String?
+  status          String         @default("SENT")
   isTemplate      Boolean        @default(false)
   templateName    String?
-  language        String?        @default("en") // "en", "or" (Odia), "hi" (Hindi)
+  language        String?        @default("en")
   createdAt       DateTime       @default(now())
 }
 
@@ -69,10 +69,10 @@ model Appointment {
   patientId       String
   patient         Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
   doctorName      String
-  date            String         // YYYY-MM-DD
-  timeSlot        String         // e.g. "10:30 AM - 11:15 AM"
-  type            String         @default("Initial Spine & Posture Assessment") // "Initial Assessment", "Therapy Session", "Review Consultation"
-  status          String         @default("SCHEDULED") // "SCHEDULED", "COMPLETED", "CANCELLED", "NO_SHOW"
+  date            String
+  timeSlot        String
+  type            String         @default("Initial Spine & Posture Assessment")
+  status          String         @default("SCHEDULED")
   notes           String?
   reminderSent24h Boolean        @default(false)
   reminderSent2h  Boolean        @default(false)
@@ -86,7 +86,7 @@ model TreatmentSession {
   patient         Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
   sessionNumber   Int
   date            DateTime       @default(now())
-  therapiesGiven  String         // e.g. "Chiropractic Adjustment, Spinal Decompression, Laser Therapy, IASTM"
+  therapiesGiven  String
   painScoreBefore Int?
   painScoreAfter  Int?
   therapistNotes  String?
@@ -97,14 +97,14 @@ model TreatmentSession {
 model BroadcastCampaign {
   id               String        @id @default(uuid())
   title            String
-  targetCondition  String?       // "ALL" or specific condition like "Lower Back Pain"
+  targetCondition  String?
   messageTemplate  String
   language         String        @default("en")
   totalRecipients  Int           @default(0)
   sentCount        Int           @default(0)
   deliveredCount   Int           @default(0)
   readCount        Int           @default(0)
-  status           String        @default("COMPLETED") // "DRAFT", "SCHEDULED", "SENDING", "COMPLETED"
+  status           String        @default("COMPLETED")
   scheduledFor     DateTime?
   createdAt        DateTime      @default(now())
 }
@@ -112,8 +112,8 @@ model BroadcastCampaign {
 model AutomationRule {
   id               String        @id @default(uuid())
   name             String
-  triggerKeyword   String        // e.g. "fees", "timing", "address", "back pain", "sciatica", "dr mishra"
-  matchType        String        @default("CONTAINS") // "EXACT", "CONTAINS", "STARTS_WITH"
+  triggerKeyword   String
+  matchType        String        @default("CONTAINS")
   responseText     String
   mediaUrl         String?
   mediaType        String?
@@ -124,9 +124,9 @@ model AutomationRule {
 
 model CannedResponse {
   id               String        @id @default(uuid())
-  shortcut         String        // e.g. "/clinic-location", "/chiro-explained", "/odia-welcome"
+  shortcut         String
   title            String
-  language         String        // "English", "Odia", "Hindi"
-  category         String        // "Greeting", "Treatment Info", "Pricing", "Location", "Exercises"
+  language         String
+  category         String
   message          String
 }
